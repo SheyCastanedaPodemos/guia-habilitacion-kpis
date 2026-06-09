@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía: Archivos de Cierre DO — Podemos Progresar</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Sans:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--verde:#0B4D2E;--verde-mid:#1a7a48;--verde-light:#E8F5EE;--acento:#22C55E;--rojo:#DC2626;--rojo-light:#FEF2F2;--naranja:#D97706;--naranja-light:#FFFBEB;--azul:#1D4ED8;--azul-light:#EFF6FF;--bg:#F7F7F4;--card:#FFFFFF;--text:#1C1C1E;--text-muted:#6B7280;--border:#E5E7EB;--radius:12px;--radius-sm:8px;--shadow:0 1px 4px rgba(0,0,0,.07)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.65}
+h1,h2,h3,h4{font-family:'Sora',sans-serif;line-height:1.25}
+code{font-family:'DM Mono',monospace;font-size:13px}
+#progress-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--verde-mid),var(--acento));width:0%;z-index:200;transition:width .1s linear}
+header{position:sticky;top:0;z-index:100;background:var(--verde);color:#fff;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.header-brand{display:flex;align-items:center;gap:10px}
+.header-brand .dot{width:8px;height:8px;background:var(--acento);border-radius:50%}
+.header-brand span{font-family:'Sora',sans-serif;font-size:13px;font-weight:600;letter-spacing:.02em}
+.header-pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;font-size:11px;padding:3px 10px;color:rgba(255,255,255,.85)}
+.layout{display:grid;grid-template-columns:240px 1fr;max-width:1100px;margin:0 auto}
+aside{padding:28px 0;position:sticky;top:54px;height:calc(100vh - 54px);overflow-y:auto;border-right:1px solid var(--border);background:#FAFAF8}
+.nav-section-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);padding:12px 24px 4px;display:block}
+.nav-link{display:flex;align-items:center;gap:8px;padding:6px 16px;border-radius:0;font-size:13px;color:var(--text-muted);text-decoration:none;transition:all .15s;cursor:pointer;border:none;background:none;width:100%;text-align:left}
+.nav-link:hover{background:var(--verde-light);color:var(--verde);padding-left:20px}
+.nav-link.active{background:var(--verde-light);color:var(--verde);font-weight:500;border-left:3px solid var(--verde);padding-left:13px}
+.nav-divider{height:1px;background:var(--border);margin:6px 16px}
+main{padding:40px 48px;max-width:780px}
+.section{margin-bottom:56px;scroll-margin-top:76px}
+.section-badge{display:inline-flex;align-items:center;gap:6px;background:var(--verde-light);color:var(--verde);border-radius:20px;font-size:11px;font-weight:600;padding:4px 12px;margin-bottom:12px;letter-spacing:.04em;text-transform:uppercase}
+.section-title{font-size:24px;font-weight:700;color:var(--text);margin-bottom:8px}
+.section-desc{color:var(--text-muted);font-size:15px;max-width:580px;margin-bottom:24px}
+.divider{border:none;border-top:1px solid var(--border);margin:40px 0}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow)}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px}
+.stat-val{font-family:'Sora',sans-serif;font-size:26px;font-weight:700}
+.stat-label{font-size:12px;color:var(--text-muted);margin-top:2px;line-height:1.4}
+.alert{border-radius:var(--radius-sm);padding:14px 16px;margin:16px 0;display:flex;gap:12px;align-items:flex-start}
+.alert-icon{flex-shrink:0;width:18px;height:18px;margin-top:2px}
+.alert-body{font-size:14px;line-height:1.55}
+.alert-body strong{display:block;margin-bottom:2px}
+.alert-rojo{background:var(--rojo-light);border-left:3px solid var(--rojo)}
+.alert-naranja{background:var(--naranja-light);border-left:3px solid var(--naranja)}
+.alert-verde{background:var(--verde-light);border-left:3px solid var(--verde-mid)}
+.alert-azul{background:var(--azul-light);border-left:3px solid var(--azul)}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px}
+.badge-ok{background:#DCFCE7;color:#166534}
+.badge-mal{background:#FEE2E2;color:#991B1B}
+.badge-warn{background:#FEF3C7;color:#92400E}
+.badge-neu{background:#F3F4F6;color:#374151}
+.toggle-group{display:flex;background:#F3F4F6;border-radius:var(--radius-sm);padding:3px;margin-bottom:16px;width:fit-content}
+.toggle-btn{padding:7px 18px;border-radius:6px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;transition:all .18s}
+.toggle-btn.active{background:#fff;color:var(--verde);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.scale-wrap{margin:16px 0}
+.scale-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.scale-bar{display:flex;border-radius:8px;overflow:hidden;height:38px}
+.scale-seg{flex:1;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;letter-spacing:.04em}
+.scale-seg.cero{background:#DC2626}
+.scale-seg.def{background:#D97706}
+.scale-seg.esp{background:#2563EB}
+.scale-seg.sob{background:#059669}
+.scale-values{display:flex;margin-top:5px}
+.scale-val{flex:1;text-align:center;font-size:10px;color:var(--text-muted)}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.compare-box{border-radius:var(--radius-sm);padding:14px}
+.compare-box.mal{background:var(--rojo-light);border:1px solid #FECACA}
+.compare-box.ok{background:var(--verde-light);border:1px solid #BBF7D0}
+.compare-label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.compare-box.mal .compare-label{color:var(--rojo)}
+.compare-box.ok .compare-label{color:var(--verde-mid)}
+.field-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:13px}
+.field-row:last-child{border-bottom:none}
+.field-key{color:var(--text-muted)}
+.field-val{font-weight:500;font-family:'DM Mono',monospace;font-size:12px}
+.compare-box.mal .field-val{color:var(--rojo)}
+.compare-box.ok .field-val{color:var(--verde-mid)}
+.example-table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+.example-table th{background:#F9FAFB;color:var(--text-muted);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.example-table td{padding:9px 12px;border-bottom:1px solid var(--border)}
+.example-table tr:last-child td{border-bottom:none}
+.ok{color:#059669;font-weight:500}
+.mal{color:var(--rojo);font-weight:500}
+.steps{list-style:none;margin:16px 0}
+.steps li{display:flex;gap:14px;margin-bottom:14px;align-items:flex-start}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--verde);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+.step-body{font-size:14px;line-height:1.55}
+.highlight{background:linear-gradient(135deg,var(--verde-light),#F0FDF4);border:1px solid #BBF7D0;border-radius:var(--radius);padding:20px 24px;margin:16px 0}
+.highlight h4{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;color:var(--verde);margin-bottom:8px}
+.callout{border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px 14px 44px;margin:14px 0;font-size:14px;line-height:1.55;position:relative}
+.callout::before{position:absolute;left:14px;top:13px;font-size:18px}
+.callout-key::before{content:'🔑'}
+.callout-warn::before{content:'⚠️'}
+.callout-bolt::before{content:'⚡'}
+.subsection{scroll-margin-top:76px;margin-bottom:28px}
+.subsection-title{font-size:17px;font-weight:600;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.ss-num{width:22px;height:22px;border-radius:50%;background:var(--verde);color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;flex-shrink:0}
+.subsection-desc{font-size:14px;color:var(--text-muted);margin-bottom:14px}
+/* Hero */
+.hero{background:var(--verde);color:#fff;border-radius:var(--radius);padding:28px 32px;margin-bottom:36px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;background:rgba(255,255,255,.04);border-radius:50%}
+.hero h1{font-size:22px;font-weight:700;margin-bottom:6px;position:relative}
+.hero p{font-size:14px;color:rgba(255,255,255,.7);margin-bottom:22px;position:relative}
+.hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;position:relative}
+.hero-stat{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:var(--radius-sm);padding:12px 16px}
+.hero-stat-val{font-family:'Sora',sans-serif;font-size:20px;font-weight:700}
+.hero-stat-label{font-size:11px;color:rgba(255,255,255,.65);margin-top:2px}
+/* Carousel */
+.carousel-wrap{position:relative;margin:16px 0}
+.carousel-track{overflow:hidden;border-radius:var(--radius)}
+.carousel-slides{display:flex;transition:transform .35s ease}
+.carousel-slide{flex:0 0 100%}
+.carousel-controls{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.carousel-btn{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s}
+.carousel-btn:hover{background:var(--verde-light);border-color:var(--verde)}
+.carousel-dots{display:flex;gap:6px}
+.carousel-dot{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .2s}
+.carousel-dot.active{background:var(--verde);width:18px;border-radius:3px}
+/* Spreadsheet visual */
+.spreadsheet{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);margin:16px 0}
+.spreadsheet table{border-collapse:collapse;font-size:12px;font-family:'DM Mono',monospace;min-width:700px;width:100%}
+.spreadsheet th{background:#1e3a2e;color:rgba(255,255,255,.85);padding:8px 12px;text-align:center;font-size:10px;font-weight:600;letter-spacing:.04em;white-space:nowrap;border-right:1px solid rgba(255,255,255,.1)}
+.spreadsheet th:last-child{border-right:none}
+.spreadsheet td{padding:8px 10px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);vertical-align:top;line-height:1.4}
+.spreadsheet td:last-child{border-right:none}
+.spreadsheet tr:last-child td{border-bottom:none}
+.spreadsheet tr:nth-child(even) td{background:#FAFAFA}
+.col-highlight{background:#FFFBEB !important;border-left:2px solid var(--naranja) !important}
+.col-ok{background:#F0FDF4 !important}
+.col-err{background:#FEF2F2 !important}
+.cell-tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:3px;font-family:'DM Mono',monospace;margin-top:2px}
+.cell-ok{background:#DCFCE7;color:#166534}
+.cell-warn{background:#FEF3C7;color:#92400E}
+.cell-bad{background:#FEE2E2;color:#991B1B}
+/* Nivel cards */
+.nivel-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0}
+.nivel-card{border-radius:var(--radius-sm);padding:12px;text-align:center}
+.nivel-card.cero-card{background:#FEE2E2;border:1px solid #FECACA}
+.nivel-card.def-card{background:#FEF3C7;border:1px solid #FDE68A}
+.nivel-card.esp-card{background:#DBEAFE;border:1px solid #BFDBFE}
+.nivel-card.sob-card{background:#DCFCE7;border:1px solid #BBF7D0}
+.nivel-name{font-family:'Sora',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.nivel-card.cero-card .nivel-name{color:var(--rojo)}
+.nivel-card.def-card .nivel-name{color:var(--naranja)}
+.nivel-card.esp-card .nivel-name{color:var(--azul)}
+.nivel-card.sob-card .nivel-name{color:#059669}
+.nivel-desc{font-size:11px;line-height:1.45;color:var(--text)}
+/* Checklist */
+.checklist-progress{background:var(--verde-light);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px}
+.chk-count{font-family:'Sora',sans-serif;font-size:22px;font-weight:700;color:var(--verde)}
+.chk-bar{flex:1;height:6px;background:#D1FAE5;border-radius:3px;overflow:hidden}
+.chk-fill{height:100%;background:var(--verde-mid);border-radius:3px;transition:width .3s ease}
+.check-item{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;transition:all .18s}
+.check-item:hover{border-color:var(--verde-mid)}
+.check-item.checked{background:var(--verde-light);border-color:#BBF7D0}
+.check-item input[type=checkbox]{width:17px;height:17px;accent-color:var(--verde);cursor:pointer;flex-shrink:0;margin-top:3px}
+.check-body{font-size:14px;line-height:1.5}
+.check-area{font-size:11px;color:var(--text-muted);font-weight:500;margin-top:2px;display:block}
+/* Incidence bar */
+.inc-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:12px}
+.inc-row:last-child{border-bottom:none}
+.inc-bar-wrap{display:flex;align-items:center;gap:8px;min-width:120px}
+.inc-bar{height:6px;border-radius:3px;flex:1}
+/* Diagram */
+.diagram{background:#F9FAFB;border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin:14px 0}
+.diagram-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.d-box{border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;font-weight:500;text-align:center;flex:1}
+.d-box.verde{background:var(--verde-light);color:var(--verde);border:1px solid #BBF7D0}
+.d-box.rojo{background:var(--rojo-light);color:var(--rojo);border:1px solid #FECACA}
+.d-box.azul{background:var(--azul-light);color:var(--azul);border:1px solid #BFDBFE}
+.d-arrow{font-size:16px;color:var(--text-muted);flex-shrink:0}
+footer{text-align:center;padding:32px;color:var(--text-muted);font-size:12px;border-top:1px solid var(--border);margin-top:32px}
+@media(max-width:768px){.layout{grid-template-columns:1fr}aside{display:none}main{padding:24px 20px}.compare,.nivel-grid{grid-template-columns:1fr 1fr}.hero-stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+<header>
+  <div class="header-brand">
+    <div class="dot"></div>
+    <span>Podemos Progresar — Desarrollo Organizacional</span>
+  </div>
+  <span class="header-pill">Guía interna · JUN 2026</span>
+</header>
+<div class="layout">
+<aside>
+  <span class="nav-section-label">Inicio</span>
+  <button class="nav-link active" onclick="scrollToSection('hero')">Contexto y diagnóstico</button>
+  <div class="nav-divider"></div>
+  <span class="nav-section-label">Definición de KPIs</span>
+  <button class="nav-link" onclick="scrollToSection('kpi-intro')">¿Qué es y por qué importa?</button>
+  <button class="nav-link" onclick="scrollToSection('kpi-categorias')">Categorías de cumplimiento</button>
+  <button class="nav-link" onclick="scrollToSection('kpi-creciente')">Creciente vs Decreciente + Formato</button>
+  <button class="nav-link" onclick="scrollToSection('kpi-rangos')">Errores en rangos</button>
+  <button class="nav-link" onclick="scrollToSection('kpi-nx')">Métricas variables</button>
+  <div class="nav-divider"></div>
+  <span class="nav-section-label">Ajuste de indicadores</span>
+  <button class="nav-link" onclick="scrollToSection('ajuste')">Cuándo y cómo ajustar</button>
+  <div class="nav-divider"></div>
+  <span class="nav-section-label">Cierre Mensual</span>
+  <button class="nav-link" onclick="scrollToSection('cierre-intro')">Los errores más frecuentes</button>
+  <button class="nav-link" onclick="scrollToSection('cierre-cat')">Error de categorización</button>
+  <button class="nav-link" onclick="scrollToSection('cierre-formato')">Error de formato</button>
+  <button class="nav-link" onclick="scrollToSection('cierre-10x')">Personal 10x</button>
+  <div class="nav-divider"></div>
+  <span class="nav-section-label">Temas clave</span>
+  <button class="nav-link" onclick="scrollToSection('excepciones')">Excepciones al bono</button>
+  <button class="nav-link" onclick="scrollToSection('checklist')">✓ Checklist final</button>
+</aside>
+<main>
+
+<!-- HERO -->
+<div id="hero" class="hero section">
+  <h1>Guía de habilitación: Archivos de Cierre</h1>
+  <p>Cómo llenar correctamente los archivos de Definición de KPIs y Cierre Mensual</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-val">107</div>
+      <div class="hero-stat-label">Incidencias detectadas Abr–May 2026</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">6</div>
+      <div class="hero-stat-label">Direcciones con incidencias</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">5</div>
+      <div class="hero-stat-label">Tipos de error identificados</div>
+    </div>
+  </div>
+</div>
+
+<!-- DIAGNÓSTICO -->
+<div id="contexto" class="section">
+  <div class="section-badge">Diagnóstico</div>
+  <h2 class="section-title">¿Por qué existe esta guía?</h2>
+  <p class="section-desc">En los cierres de Abril y Mayo 2026 se detectaron 107 incidencias en el llenado de los archivos de cierre. Cada incidencia significa que el resultado de un socio quedó registrado con un error — ya sea en el formato, en la categoría o en los rangos. Eso genera datos incorrectos que impactan directamente el cálculo del bono y la evaluación de desempeño.</p>
+
+  <div class="card">
+    <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Tipos de error detectados</p>
+    <div class="inc-row"><span style="font-size:13px">Categorización incorrecta</span><span class="badge badge-mal">59</span></div>
+    <div class="inc-row"><span style="font-size:13px">Rangos traspuestos / definición incorrecta</span><span class="badge badge-warn">14</span></div>
+    <div class="inc-row"><span style="font-size:13px">Resultado con formato incorrecto</span><span class="badge badge-warn">19</span></div>
+    <div class="inc-row"><span style="font-size:13px">Meta con formato incorrecto</span><span class="badge badge-neu">12</span></div>
+    <div class="inc-row"><span style="font-size:13px">Resultado no reportado</span><span class="badge badge-neu">3</span></div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- DEFINICIÓN DE KPIs -->
+<div id="kpi-intro" class="section">
+  <div class="section-badge">Trimestral</div>
+  <h2 class="section-title">Archivo de Definición de KPIs</h2>
+  <p class="section-desc">Se llena una vez por trimestre, por dirección. Define qué se mide, cómo se mide y qué rango de resultado corresponde a cada nivel de cumplimiento. Es la base que alimenta todos los cierres mensuales del Q.</p>
+</div>
+
+<!-- CATEGORÍAS DE CUMPLIMIENTO -->
+<div id="kpi-categorias" class="section">
+  <div class="section-badge">Definición</div>
+  <h2 class="section-title">Categorías de cumplimiento</h2>
+  <p class="section-desc">Cada KPI se evalúa contra cuatro niveles. Estos niveles son los mismos para toda la organización y su significado es el siguiente:</p>
+
+  <p style="font-size:14px;margin-bottom:14px">Cada registro en el archivo define los KPIs de un socio para el trimestre. Los cuatro niveles de cumplimiento que se usan en Podemos son:</p>
+
+  <div class="nivel-grid">
+    <div class="nivel-card cero-card">
+      <div class="nivel-name">Cero</div>
+      <div class="nivel-desc">Inaceptable. Implica alto riesgo para la operación.</div>
+    </div>
+    <div class="nivel-card def-card">
+      <div class="nivel-name">Deficiente</div>
+      <div class="nivel-desc">Umbral debajo del mínimo aceptable para la operación.</div>
+    </div>
+    <div class="nivel-card esp-card">
+      <div class="nivel-name">Esperado</div>
+      <div class="nivel-desc">Rango aceptable de cumplimiento. Aquí se mueve la meta mensual.</div>
+    </div>
+    <div class="nivel-card sob-card">
+      <div class="nivel-name">Sobresaliente</div>
+      <div class="nivel-desc">Nivel que supera expectativas y agrega valor.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-key">
+    El archivo de Definición de KPIs es la fuente de verdad. Si la definición tiene un error, ese error se replica en todos los cierres del trimestre. Por eso es crítico que esté correcta desde el primer día del Q.
+  </div>
+</div>
+
+<!-- CRECIENTE VS DECRECIENTE + FORMATO NUMÉRICO -->
+<div id="kpi-creciente" class="section">
+  <div class="section-badge">Configuración</div>
+  <h2 class="section-title">Creciente vs Decreciente y formato numérico</h2>
+  <p class="section-desc">El tipo de KPI define la dirección de la escala, y el formato en que se reporta la meta y el resultado debe ser siempre numérico. Ambos temas van juntos porque la mayoría de los errores de categorización tienen su raíz aquí.</p>
+
+  <div class="subsection">
+  <h3 class="subsection-title"><span class="ss-num">1</span> KPI Creciente vs Decreciente</h3>
+  <p class="subsection-desc">El tipo de KPI define la dirección de la escala. Construir los rangos al revés o con traslapos es el error que más incidencias genera. Las 59 categorizaciones incorrectas en Abr–May tienen este origen.</p>
+  <div class="toggle-group" id="kpi-type-toggle">
+    <button class="toggle-btn active" onclick="showKpiType('creciente')">📈 Creciente — más es mejor</button>
+    <button class="toggle-btn" onclick="showKpiType('decreciente')">📉 Decreciente — menos es mejor</button>
+  </div>
+
+  <div id="panel-creciente">
+    <p style="font-size:14px;margin-bottom:12px">En un KPI creciente, el número más alto es el mejor resultado. La escala va de menor (Cero) a mayor (Sobresaliente).</p>
+    <div class="scale-wrap">
+      <p class="scale-label">Escala KPI creciente</p>
+      <div class="scale-bar">
+        <div class="scale-seg cero">CERO</div>
+        <div class="scale-seg def">DEFICIENTE</div>
+        <div class="scale-seg esp">ESPERADO</div>
+        <div class="scale-seg sob">SOBRESALIENTE</div>
+      </div>
+      <div class="scale-values">
+        <div class="scale-val">Número más bajo</div><div class="scale-val"></div><div class="scale-val"></div>
+        <div class="scale-val">Número más alto</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <p style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:10px">Ejemplo — % de cumplimiento de metas</p>
+      <table class="example-table">
+        <tr><th>Nivel</th><th>Rango</th></tr>
+        <tr><td><span class="badge badge-mal">CERO</span></td><td><code>&lt;40%</code></td></tr>
+        <tr><td><span class="badge badge-warn">DEFICIENTE</span></td><td><code>40% a 79%</code></td></tr>
+        <tr><td><span class="badge" style="background:#DBEAFE;color:#1E40AF">ESPERADO</span></td><td><code>80% a 99%</code></td></tr>
+        <tr><td><span class="badge badge-ok">SOBRESALIENTE</span></td><td><code>100%</code></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div id="panel-decreciente" style="display:none">
+    <p style="font-size:14px;margin-bottom:12px">En un KPI decreciente, el número más bajo es el mejor resultado. <strong>La escala se invierte:</strong> Cero es el valor más alto (peor resultado) y Sobresaliente es el valor más bajo (mejor resultado).</p>
+    <div class="alert alert-rojo">
+      <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div class="alert-body"><strong>El error más frecuente:</strong> poner la escala al revés — poner el número más bajo en Cero y el más alto en Sobresaliente. Eso hace que el socio que tuvo el mejor resultado del mes quede categorizado como Cero.</div>
+    </div>
+    <div class="scale-wrap">
+      <p class="scale-label">Escala KPI decreciente — la escala se invierte</p>
+      <div class="scale-bar">
+        <div class="scale-seg sob">SOBRESALIENTE</div>
+        <div class="scale-seg esp">ESPERADO</div>
+        <div class="scale-seg def">DEFICIENTE</div>
+        <div class="scale-seg cero">CERO</div>
+      </div>
+      <div class="scale-values">
+        <div class="scale-val">Número más bajo ✓</div><div class="scale-val"></div><div class="scale-val"></div>
+        <div class="scale-val">Número más alto ✗</div>
+      </div>
+    </div>
+    <div class="compare" style="margin-top:12px">
+      <div class="compare-box mal">
+        <p class="compare-label">✗ Captura incorrecta</p>
+        <div class="field-row"><span class="field-key">CERO</span><span class="field-val">&lt;0.25% ← ERROR</span></div>
+        <div class="field-row"><span class="field-key">DEFICIENTE</span><span class="field-val">0.25% a 0.30%</span></div>
+        <div class="field-row"><span class="field-key">ESPERADO</span><span class="field-val">0.31% a 0.50%</span></div>
+        <div class="field-row"><span class="field-key">SOBRESALIENTE</span><span class="field-val">&gt;0.50% ← ERROR</span></div>
+      </div>
+      <div class="compare-box ok">
+        <p class="compare-label">✓ Captura correcta</p>
+        <div class="field-row"><span class="field-key">CERO</span><span class="field-val">&gt;0.50% ✓</span></div>
+        <div class="field-row"><span class="field-key">DEFICIENTE</span><span class="field-val">0.31% a 0.50%</span></div>
+        <div class="field-row"><span class="field-key">ESPERADO</span><span class="field-val">0.25% a 0.30%</span></div>
+        <div class="field-row"><span class="field-key">SOBRESALIENTE</span><span class="field-val">&lt;0.25% ✓</span></div>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- end subsection creciente/decreciente -->
+
+  <!-- SUBSECCIÓN 2: FORMATO NUMÉRICO -->
+  <div id="kpi-formato" class="subsection">
+    <h3 class="subsection-title"><span class="ss-num">2</span> Formato numérico</h3>
+    <p class="subsection-desc">La fórmula del archivo de cierre compara la meta con el resultado para determinar la categoría. Esa comparación solo funciona cuando ambos valores son estrictamente numéricos. En cuanto entra texto, la fórmula se rompe sin avisar.</p>
+
+    <div class="card" style="margin-bottom:14px">
+      <p style="font-size:13px;font-weight:600;margin-bottom:12px">Los tres formatos válidos para reportar meta y resultado:</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="background:var(--verde-light);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:var(--verde);margin-bottom:4px">97</div>
+          <div style="font-size:11px;color:var(--verde-mid)">Número entero</div>
+        </div>
+        <div style="background:var(--verde-light);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:var(--verde);margin-bottom:4px">0.25</div>
+          <div style="font-size:11px;color:var(--verde-mid)">Decimal</div>
+        </div>
+        <div style="background:var(--verde-light);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:var(--verde);margin-bottom:4px">97%</div>
+          <div style="font-size:11px;color:var(--verde-mid)">Porcentaje</div>
+        </div>
+      </div>
+      <p style="font-size:13px;font-weight:600;color:var(--rojo);margin-bottom:10px">Formatos que rompen la fórmula:</p>
+      <table class="example-table">
+        <tr><th>Lo que se captura</th><th>Por qué falla</th><th>Correcto</th></tr>
+        <tr><td><code class="mal">8 días naturales</code></td><td style="font-size:12px;color:var(--rojo)">Texto mezclado con número — la celda ya no es numérica</td><td><code class="ok">8</code></td></tr>
+        <tr><td><code class="mal">4-5</code></td><td style="font-size:12px;color:var(--rojo)">Rango con guión — la fórmula no sabe contra qué comparar</td><td><code class="ok">4</code> o <code class="ok">5</code> (definir uno)</td></tr>
+        <tr><td><code class="mal">0.99</code> cuando la meta es <code>99%</code></td><td style="font-size:12px;color:var(--rojo)">Decimal vs porcentaje — distinto formato entre meta y resultado</td><td><code class="ok">99%</code></td></tr>
+        <tr><td><code class="mal">N/A</code> o cualquier texto</td><td style="font-size:12px;color:var(--rojo)">Si el KPI no aplica, la celda va vacía — nunca con texto</td><td>Celda vacía</td></tr>
+      </table>
+      <div style="margin-top:12px;background:var(--azul-light);border:1px solid #BFDBFE;border-radius:8px;padding:12px">
+        <p style="font-size:13px;font-weight:600;color:var(--azul);margin-bottom:6px">Cuando un KPI no aplica en el mes: usa la columna de evidencia</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">Si un KPI no aplica (socio de nuevo ingreso, incapacidad, baja, etc.), las celdas de Meta y Resultado van completamente vacías. El contexto se explica en la columna <strong>Link de evidencia</strong>.</p>
+        <table class="example-table" style="font-size:12px">
+          <tr><th>Meta</th><th>Resultado</th><th>Link de evidencia — qué escribir</th></tr>
+          <tr><td style="color:var(--text-muted);font-style:italic">vacío</td><td style="color:var(--text-muted);font-style:italic">vacío</td><td><code>No aplica — socio de nuevo ingreso, sin meta asignada este mes</code></td></tr>
+          <tr><td style="color:var(--text-muted);font-style:italic">vacío</td><td style="color:var(--text-muted);font-style:italic">vacío</td><td><code>No aplica — incapacidad médica del 3 al 30 de abril</code></td></tr>
+          <tr><td style="color:var(--text-muted);font-style:italic">vacío</td><td style="color:var(--text-muted);font-style:italic">vacío</td><td><code>No aplica — baja procesada el 15 de abril</code></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="callout callout-key">
+      <strong>Regla de consistencia:</strong> la celda de Meta y la celda de Resultado deben tener exactamente el mismo formato. Si la meta dice <code>99%</code>, el resultado dice <code>97%</code>. Si la meta dice <code>0.25</code>, el resultado dice <code>0.22</code>. Nunca mezclar decimales con porcentajes entre las dos celdas.
+    </div>
+  </div><!-- end kpi-formato -->
+</div><!-- end kpi-creciente -->
+
+<hr class="divider">
+
+<!-- ERRORES EN RANGOS -->
+<div id="kpi-rangos" class="section">
+  <div class="section-badge">Validación</div>
+  <h2 class="section-title">Errores en los rangos de cumplimiento</h2>
+  <p class="section-desc">Los rangos deben cubrir todos los valores posibles sin que ninguno caiga en dos niveles al mismo tiempo. Cuando eso no se cumple, la fórmula no puede categorizar correctamente. Hay tres formas en que esto ocurre:</p>
+
+  <div class="carousel-wrap">
+    <div class="carousel-track">
+      <div class="carousel-slides" id="carousel-slides">
+
+        <!-- Slide 1: Traslape -->
+        <div class="carousel-slide">
+          <div class="card" style="border-left:3px solid var(--rojo)">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <span class="badge badge-mal">Error 1</span>
+              <strong style="font-size:14px">Traslape — una categoría se sobrepone a otra en sus rangos definidos</strong>
+            </div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Ocurre cuando Cero usa <code>&lt;X</code> y Deficiente usa <code>&lt;Y</code> siendo Y mayor que X. Todo valor por debajo de X queda atrapado en ambas categorías al mismo tiempo y la fórmula no puede resolver el conflicto.</p>
+            <div class="compare">
+              <div class="compare-box mal">
+                <p class="compare-label">✗ Con traslape</p>
+                <div class="field-row"><span class="field-key">CERO</span><span class="field-val">&lt;30%</span></div>
+                <div class="field-row"><span class="field-key">DEFICIENTE</span><span class="field-val">&lt;60% ← overlap</span></div>
+                <div class="field-row"><span class="field-key">ESPERADO</span><span class="field-val">≥80%</span></div>
+                <div class="field-row"><span class="field-key">SOBRESALIENTE</span><span class="field-val">≥100%</span></div>
+                <div style="margin-top:8px;font-size:11px;color:var(--rojo);background:#FEE2E2;padding:6px 8px;border-radius:4px">20% es CERO y también DEFICIENTE. La fórmula no sabe cuál aplicar. Además los valores entre 60% y 79% no tienen categoría.</div>
+              </div>
+              <div class="compare-box ok">
+                <p class="compare-label">✓ Sin traslape</p>
+                <div class="field-row"><span class="field-key">CERO</span><span class="field-val">&lt;30%</span></div>
+                <div class="field-row"><span class="field-key">DEFICIENTE</span><span class="field-val">30% a 59.9%</span></div>
+                <div class="field-row"><span class="field-key">ESPERADO</span><span class="field-val">60% a 79.9%</span></div>
+                <div class="field-row"><span class="field-key">SOBRESALIENTE</span><span class="field-val">≥80%</span></div>
+                <div style="margin-top:8px;font-size:11px;color:var(--verde-mid);background:var(--verde-light);padding:6px 8px;border-radius:4px">Cada valor cae en exactamente una categoría. Sin vacíos ni duplicados.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 2: Mismo operador -->
+        <div class="carousel-slide">
+          <div class="card" style="border-left:3px solid var(--rojo)">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <span class="badge badge-mal">Error 2</span>
+              <strong style="font-size:14px">Mismo símbolo en Cero y Sobresaliente — la escala se contradice</strong>
+            </div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Cuando Cero y Sobresaliente usan el mismo operador (&lt; o &gt;), hay valores que califican en ambos extremos al mismo tiempo. En un KPI creciente: si Cero usa &lt;, Sobresaliente debe usar &gt;. En decreciente, al revés.</p>
+            <div class="card" style="background:#FEF2F2;border-color:#FECACA;margin-bottom:0">
+              <p style="font-size:12px;font-weight:600;color:var(--rojo);margin-bottom:10px">Ejemplo — KPI creciente con operadores contradictorios</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div>
+                  <p style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Escala capturada:</p>
+                  <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #FECACA;font-size:12px">
+                    <div style="color:var(--rojo);font-weight:600;padding:3px 0;border-bottom:1px solid #FEE2E2">CERO: <code>&gt;95</code></div>
+                    <div style="padding:3px 0;border-bottom:1px solid #FEE2E2">DEFICIENTE: 95% a 96.9%</div>
+                    <div style="padding:3px 0;border-bottom:1px solid #FEE2E2">ESPERADO: 97%</div>
+                    <div style="color:var(--rojo);font-weight:600;padding:3px 0">SOBRESALIENTE: <code>&gt;97.1%</code></div>
+                  </div>
+                </div>
+                <div>
+                  <p style="font-size:11px;color:var(--text-muted);margin-bottom:6px">¿Qué pasa con resultado = 98%?</p>
+                  <div style="display:flex;flex-direction:column;gap:4px;font-size:11px">
+                    <div style="background:#FEE2E2;border-radius:4px;padding:5px 8px;color:var(--rojo)">CERO: 98 &gt; 95 → aplica ✗</div>
+                    <div style="background:#F3F4F6;border-radius:4px;padding:5px 8px;color:var(--text-muted)">DEFICIENTE: no aplica</div>
+                    <div style="background:#F3F4F6;border-radius:4px;padding:5px 8px;color:var(--text-muted)">ESPERADO: no aplica</div>
+                    <div style="background:#DCFCE7;border-radius:4px;padding:5px 8px;color:var(--verde-mid)">SOBRESALIENTE: 98 &gt; 97.1 → aplica ✗</div>
+                  </div>
+                  <p style="font-size:11px;color:var(--rojo);margin-top:6px">El mismo resultado es CERO y SOBRESALIENTE a la vez.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 3: Rango imposible -->
+        <div class="carousel-slide">
+          <div class="card" style="border-left:3px solid var(--naranja)">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <span class="badge badge-warn">Error 3</span>
+              <strong style="font-size:14px">Rango imposible — el límite inferior es mayor al superior</strong>
+            </div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Cuando se escribe un rango como "X a Y" donde X es mayor que Y, ese rango no puede cumplirse. Ningún resultado puede ser a la vez mayor a 0.6% y menor a 0.10%.</p>
+            <div class="card" style="background:#FFFBEB;border-color:#FDE68A;margin-bottom:0">
+              <p style="font-size:12px;font-weight:600;color:var(--naranja);margin-bottom:10px">Ejemplo — KPI con rango Esperado internamente invertido</p>
+              <table class="example-table">
+                <tr><th>Nivel</th><th>Capturado</th><th>Situación</th></tr>
+                <tr><td>CERO</td><td><code>&gt;0.3%</code></td><td style="font-size:11px;color:var(--rojo)">Operador incorrecto para KPI creciente</td></tr>
+                <tr><td>DEFICIENTE</td><td><code>0.3% a 0.59%</code></td><td style="font-size:11px;color:var(--text-muted)">Bien definido</td></tr>
+                <tr><td>ESPERADO</td><td><code style="color:var(--rojo)">0.6% a 0.10%</code></td><td style="font-size:11px;color:var(--rojo)">Imposible: 0.6 &gt; 0.10</td></tr>
+                <tr><td>SOBRESALIENTE</td><td><code>&gt;0.10%</code></td><td style="font-size:11px;color:var(--rojo)">Se traslapa con Cero</td></tr>
+              </table>
+              <p style="font-size:11px;color:var(--naranja);margin-top:8px">Antes de guardar un rango "X a Y", verifica siempre que X sea menor a Y.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="carousel-controls">
+      <button class="carousel-btn" onclick="moveCarousel(-1)">←</button>
+      <div class="carousel-dots" id="carousel-dots">
+        <div class="carousel-dot active" onclick="goToSlide(0)"></div>
+        <div class="carousel-dot" onclick="goToSlide(1)"></div>
+        <div class="carousel-dot" onclick="goToSlide(2)"></div>
+      </div>
+      <button class="carousel-btn" onclick="moveCarousel(1)">→</button>
+    </div>
+  </div>
+
+  <div class="callout callout-key" style="margin-top:16px">
+    <strong>Las tres preguntas para validar cualquier escala antes de guardar:</strong><br>
+    1. ¿Algún valor cae en dos categorías al mismo tiempo? → traslape.<br>
+    2. ¿Cero y Sobresaliente usan el mismo símbolo (&lt; y &lt;, o &gt; y &gt;)? → contradicción.<br>
+    3. ¿Algún rango tiene el límite inferior mayor al superior? → rango imposible.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- MÉTRICAS VARIABLES -->
+<div id="kpi-nx" class="section">
+  <div class="section-badge">Variables</div>
+  <h2 class="section-title">Métricas variables</h2>
+  <p class="section-desc">Algunas metas no son fijas — cambian cada mes según el contexto operativo. En el archivo de Definición de KPIs se usan las letras N o X como marcadores de posición para esas metas. Al momento del cierre, se sustituyen por el valor numérico real definido al inicio del período.</p>
+  <div class="card">
+    <p style="font-size:13px;font-weight:600;margin-bottom:12px">¿Cómo funciona la sustitución?</p>
+    <div class="diagram">
+      <div class="diagram-row">
+        <div class="d-box azul">Definición del KPI:<br><code style="font-size:11px">Mantener mora en N% mensual</code></div>
+        <div class="d-arrow">→</div>
+        <div class="d-box" style="background:#F3F4F6;color:#374151;border:1px solid var(--border)">Inicio de mes:<br><code style="font-size:11px">Dirección define N = 0.25%</code></div>
+        <div class="d-arrow">→</div>
+        <div class="d-box verde">En el cierre:<br><code style="font-size:11px">Meta = 0.25% · Resultado = 0.22%</code></div>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin-top:10px">Si en el archivo de cierre la celda de Meta dice <code>N</code> o <code>X</code> (la letra literal), la fórmula no puede comparar y el resultado queda sin categoría.</p>
+  </div>
+  <div class="compare" style="margin-top:12px">
+    <div class="compare-box mal">
+      <p class="compare-label">✗ Error</p>
+      <div class="field-row"><span class="field-key">Meta</span><span class="field-val">N%</span></div>
+      <div class="field-row"><span class="field-key">Resultado</span><span class="field-val">0.23%</span></div>
+      <div class="field-row"><span class="field-key">Categoría</span><span class="field-val">ERROR ✗</span></div>
+    </div>
+    <div class="compare-box ok">
+      <p class="compare-label">✓ Correcto</p>
+      <div class="field-row"><span class="field-key">Meta</span><span class="field-val">0.25%</span></div>
+      <div class="field-row"><span class="field-key">Resultado</span><span class="field-val">0.23%</span></div>
+      <div class="field-row"><span class="field-key">Categoría</span><span class="field-val">SOBRESALIENTE ✓</span></div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+<div id="ajuste" class="section">
+  <div class="section-badge">Proceso</div>
+  <h2 class="section-title">Ajuste de indicadores durante el trimestre</h2>
+  <p class="section-desc">Si durante el Q es necesario cambiar la definición, los rangos o la meta de un KPI, el cambio debe hacerse en el archivo de Definición de KPIs — no en el archivo de cierre mensual. Cualquier cambio directo en el cierre sin actualizar la definición genera inconsistencias que DO no puede rastrear.</p>
+
+  <ul class="steps">
+    <li><span class="step-num">1</span><div class="step-body"><strong>Identifica qué necesita cambiar</strong> — puede ser un ajuste de rangos, cambio de tipo (creciente/decreciente) o modificación en la descripción o meta del KPI.</div></li>
+    <li><span class="step-num">2</span><div class="step-body"><strong>Regístralo en el archivo de Definición de KPIs</strong> — columna "Justificación de ajuste realizado". Este campo es obligatorio y no puede quedar vacío.</div></li>
+    <li><span class="step-num">3</span><div class="step-body"><strong>Solicita VoBo de DG</strong> — la columna "VOBO DG" debe tener la validación antes de que se aplique el cambio en el cierre del mes.</div></li>
+    <li><span class="step-num">4</span><div class="step-body"><strong>El cambio se refleja automáticamente</strong> en el archivo de cierre mensual una vez actualizado en la definición. No se toca el archivo de cierre directamente.</div></li>
+  </ul>
+
+  <div class="alert alert-naranja">
+    <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div class="alert-body">Si necesitas hacer un ajuste urgente, primero avisa a DO para validar el proceso. Un cambio directo en el cierre sin respaldo en la definición es imposible de rastrear y puede generar inconsistencias en la evaluación de desempeño.</div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- CIERRE MENSUAL -->
+<div id="cierre-intro" class="section">
+  <div class="section-badge">Mensual</div>
+  <h2 class="section-title">Archivo de Cierre Mensual</h2>
+  <p class="section-desc">Se llena una vez al mes por dirección. Captura los resultados reales de cada socio y los compara contra las metas definidas. Alimenta el cálculo de bonos y la evaluación de desempeño.</p>
+
+  <div class="card" style="margin-bottom:20px">
+    <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Pestañas del archivo</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div style="background:#F9FAFB;border:1px solid var(--border);border-radius:8px;padding:12px">
+        <p style="font-size:12px;font-weight:600;color:var(--verde);margin-bottom:4px">01_KPIs_Por_Persona</p>
+        <p style="font-size:12px;color:var(--text-muted)">Resultados individuales por KPI con categoría de cumplimiento</p>
+      </div>
+      <div style="background:#F9FAFB;border:1px solid var(--border);border-radius:8px;padding:12px">
+        <p style="font-size:12px;font-weight:600;color:var(--verde);margin-bottom:4px">02_Bonos</p>
+        <p style="font-size:12px;color:var(--text-muted)">Cálculo del bono y columna Comentarios para acuerdos especiales</p>
+      </div>
+      <div style="background:#F9FAFB;border:1px solid var(--border);border-radius:8px;padding:12px">
+        <p style="font-size:12px;font-weight:600;color:var(--verde);margin-bottom:4px">04_Reflexiones</p>
+        <p style="font-size:12px;color:var(--text-muted)">Análisis cualitativo mensual por área</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ERROR DE CATEGORIZACIÓN -->
+<div id="cierre-cat" class="subsection">
+  <h3 class="subsection-title"><span class="ss-num">1</span> Error de categorización</h3>
+  <p class="subsection-desc">La categorización incorrecta ocurre cuando el nivel asignado (Cero/Deficiente/Esperado/Sobresaliente) no corresponde al resultado real según los rangos definidos. En Abr–May, 59 de las 107 incidencias fueron de este tipo. La causa más frecuente es que la escala en el archivo de Definición de KPIs tiene alguno de los tres errores descritos arriba — y al no corregirse en la definición, el cierre los hereda automáticamente.</p>
+
+  <p style="font-size:14px;margin-bottom:12px">Así se ven las columnas clave en la pestaña <strong>01_KPIs_Por_Persona</strong>:</p>
+
+  <div class="spreadsheet">
+    <table>
+      <thead>
+        <tr>
+          <th>No. Indicador</th>
+          <th>Tipo</th>
+          <th>Descripción del KPI</th>
+          <th>Rangos de cumplimiento</th>
+          <th style="background:#1a3d28">Meta ⚠</th>
+          <th style="background:#1a3d28">Resultado ⚠</th>
+          <th style="background:#1a3d28">Categoría ⚠</th>
+          <th>Link de evidencia</th>
+          <th>Bono</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>KPI 1</td>
+          <td>Decreciente</td>
+          <td style="font-size:11px">Mantener mora bajo parámetros de deterioro</td>
+          <td style="font-size:11px">Cero: &gt;0.50%<br>Def: 0.31–0.50%<br>Esp: 0.25–0.30%<br>Sob: &lt;0.25%</td>
+          <td class="col-ok"><strong>0.25%</strong></td>
+          <td class="col-ok"><strong>0.22%</strong></td>
+          <td class="col-ok"><span class="cell-tag cell-ok">SOBRESALIENTE</span></td>
+          <td style="font-size:11px">QuickSight — link</td>
+          <td><span class="cell-tag cell-ok">Cumple</span></td>
+        </tr>
+        <tr>
+          <td>KPI 2</td>
+          <td>Creciente</td>
+          <td style="font-size:11px">Cumplir N% de avance en hitos del proyecto</td>
+          <td style="font-size:11px">Cero: &lt;70%<br>Def: 70–84%<br>Esp: 85–100%<br>Sob: anticipado</td>
+          <td class="col-highlight"><strong>90%</strong></td>
+          <td class="col-highlight"><strong>0.90</strong> ⚠</td>
+          <td class="col-err"><span class="cell-tag cell-bad">CERO ✗</span></td>
+          <td style="font-size:11px">Asana — link</td>
+          <td><span class="cell-tag cell-bad">No cumple</span></td>
+        </tr>
+        <tr>
+          <td>KPI 3</td>
+          <td>Creciente</td>
+          <td style="font-size:11px">Alcanzar 95% de aplicación mensual de checklist en todas las tribus</td>
+          <td style="font-size:11px">Cero: &lt;85%<br>Def: 85–95%<br>Esp: 0.95 ⚠<br>Sob: &gt;95%</td>
+          <td><strong>95%</strong></td>
+          <td><strong>95%</strong></td>
+          <td><span class="cell-tag cell-warn">DEFICIENTE ⚠</span></td>
+          <td style="font-size:11px">Dashboard People — link</td>
+          <td><span class="cell-tag cell-bad">No cumple</span></td>
+        </tr>
+        <tr>
+          <td>KPI 1</td>
+          <td>—</td>
+          <td style="font-size:11px">KPI: N/A</td>
+          <td style="font-size:11px">Rangos definidos</td>
+          <td style="color:var(--text-muted);font-style:italic">vacío</td>
+          <td style="color:var(--text-muted);font-style:italic">vacío</td>
+          <td style="color:var(--text-muted);font-style:italic">vacío</td>
+          <td style="font-size:11px"><em>No aplica — incapacidad médica</em></td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:12px;color:var(--text-muted);margin-top:6px">⚠ Las columnas Meta, Resultado y Categoría son las tres que más incidencias concentran. La fila 2 muestra el error de formato (0.90 en lugar de 90%); la fila 3 muestra cómo un error en el rango Esperado ("0.95" en lugar de "95%") produce una categoría incorrecta aunque el resultado sea real.</p>
+</div>
+
+<!-- ERROR DE FORMATO -->
+<div id="cierre-formato" class="subsection">
+  <h3 class="subsection-title"><span class="ss-num">2</span> Error de formato en resultados</h3>
+  <p class="subsection-desc">19 incidencias en Abr–May se originaron porque el resultado capturado tiene un formato distinto al de la meta. La fórmula no detecta la diferencia — simplemente produce una categoría incorrecta. La tabla de la sección anterior muestra un ejemplo real: meta en 90% y resultado en 0.90.</p>
+  <div class="callout callout-key">
+    La regla es una: el formato de Meta y el formato de Resultado deben ser idénticos siempre. Si la meta dice <code>99%</code>, el resultado dice <code>97%</code>. Si la meta dice <code>0.25</code>, el resultado dice <code>0.23</code>. Nunca mezclar decimales con porcentajes entre las dos celdas del mismo KPI.
+  </div>
+</div>
+
+<!-- PERSONAL 10X -->
+<div id="cierre-10x" class="subsection">
+  <h3 class="subsection-title"><span class="ss-num">3</span> Reporte correcto del personal 10x</h3>
+  <p class="subsection-desc">El personal 10x se reporta con una lógica diferente al resto. Si el reporte no se hace correctamente, el socio puede aparecer sin indicadores o con los indicadores equivocados.</p>
+  <ul class="steps">
+    <li><span class="step-num">1</span><div class="step-body"><strong>Si un socio no está reportado como 10x</strong>, ocurren dos posibles situaciones: si el puesto tiene KPIs de equipo operativo cargados, el sistema le mostrará esos indicadores en lugar de los de 10x. Si el puesto no tiene KPIs individuales cargados para ese perfil, el socio aparecerá completamente en blanco en el cierre — sin meta, sin resultado, sin categoría — porque no está registrado como 10x ni como operativo.</div></li>
+    <li><span class="step-num">2</span><div class="step-body"><strong>Reporta a todas las personas 10x antes de que abra el cierre.</strong> No reportarlo corriendo al final del mes genera que la base no pueda procesarlo a tiempo.</div></li>
+    <li><span class="step-num">3</span><div class="step-body"><strong>Usa el nombre exacto y el ID de socio correcto.</strong> Se han dado casos de IDs duplicados con el mismo nombre. Verifica el ID en el catálogo antes de reportar.</div></li>
+    <li><span class="step-num">4</span><div class="step-body"><strong>Producto y TI son prioritarios.</strong> Para socios de nuevo ingreso en estas áreas, si el KPI no se gestiona desde el primer mes, la evaluación queda incompleta aunque el socio no bonifique ese período.</div></li>
+  </ul>
+</div>
+
+<hr class="divider">
+
+<!-- EXCEPCIONES -->
+<div id="excepciones" class="section">
+  <div class="section-badge">Temas clave</div>
+  <h2 class="section-title">Excepciones al esquema de bonos</h2>
+  <p class="section-desc">El esquema de bonos de Podemos es binario: se activa cuando el socio cumple al 100% sus KPIs y la MCI. No se activa si no se cumplen. La excepción es un acuerdo negociado a esa regla, no un bono adicional.</p>
+
+  <div class="alert alert-azul">
+    <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <div class="alert-body"><strong>Contexto clave:</strong> el bono extraordinario no representa un deber ni una obligación de Podemos hacia el socio. Es la excepción negociada a la regla binaria, acordada entre director y socio cuando existe una situación extraordinaria documentada.</div>
+  </div>
+
+  <div class="card" style="margin:16px 0">
+    <p style="font-size:13px;font-weight:600;margin-bottom:10px">¿Cuándo aplica?</p>
+    <p style="font-size:14px;color:var(--text);line-height:1.6">La asignación del bono extraordinario es el resultado de un acuerdo entre director y socio, donde a pesar de que el resultado no alcanzó lo requerido para detonar el bono, se decide pagarlo de todas formas por una situación extraordinaria. Puede ser una contingencia operativa, una circunstancia externa o cualquier situación atípica acordada con la dirección.</p>
+  </div>
+
+  <div class="compare">
+    <div class="card">
+      <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--naranja);margin-bottom:10px">Qué modifica el acuerdo</p>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;font-size:13px">
+        <li style="display:flex;gap:8px"><span style="color:var(--naranja);flex-shrink:0">→</span> La decisión de pago. Aunque la fórmula diría que no detona, el director aprueba pagarlo.</li>
+        <li style="display:flex;gap:8px"><span style="color:var(--naranja);flex-shrink:0">→</span> El registro en la pestaña <strong>02_Bonos → columna Comentarios</strong>, donde queda documentado el motivo.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--rojo);margin-bottom:10px">Qué NO modifica el acuerdo</p>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;font-size:13px">
+        <li style="display:flex;gap:8px"><span style="color:var(--rojo);flex-shrink:0">→</span> <strong>La evaluación de desempeño no cambia.</strong> El resultado capturado en 01_KPIs_Por_Persona refleja lo que realmente pasó.</li>
+        <li style="display:flex;gap:8px"><span style="color:var(--rojo);flex-shrink:0">→</span> La categoría (Cero/Deficiente/Esperado/Sobresaliente) permanece como quedó. No se ajusta.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="highlight" style="margin-top:16px">
+    <h4>Por qué es crítico el registro en Comentarios</h4>
+    <p style="font-size:13px;color:var(--text-muted);line-height:1.6">Cuando el equipo de Personas prepara las evaluaciones, revisa la pestaña de Bonos y ve el pago registrado. Sin el comentario que explica el acuerdo, no hay forma de distinguir si el bono se pagó porque el socio cumplió sus KPIs o porque se llegó a un acuerdo extraordinario. Esa distinción importa para la evaluación. <strong>El registro protege al socio, al director y al proceso.</strong></p>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p style="font-size:13px;font-weight:600;margin-bottom:12px">Cómo registrarlo:</p>
+    <ul class="steps">
+      <li><span class="step-num">1</span><div class="step-body">Ir a la pestaña <strong>02_Bonos</strong> del archivo de cierre mensual.</div></li>
+      <li><span class="step-num">2</span><div class="step-body">Localizar la columna <strong>Comentarios</strong> del socio correspondiente.</div></li>
+      <li><span class="step-num">3</span><div class="step-body">Registrar el motivo del acuerdo de forma concisa: qué situación lo generó y qué acordaron. Una oración es suficiente.</div></li>
+      <li><span class="step-num">4</span><div class="step-body">La pestaña <strong>01_KPIs_Por_Persona</strong> queda sin modificar. Los resultados reflejan lo que realmente ocurrió ese mes.</div></li>
+    </ul>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- CHECKLIST -->
+<div id="checklist" class="section">
+  <div class="section-badge">Verificación</div>
+  <h2 class="section-title">Checklist antes de entregar el cierre</h2>
+  <p class="section-desc">Verifica estos puntos antes de enviar el archivo de cierre mensual a DO. Marca cada uno conforme lo confirmes.</p>
+
+  <div class="checklist-progress">
+    <div class="chk-count" id="chk-count">0/8</div>
+    <div style="flex:1">
+      <div style="font-size:13px;color:var(--verde-mid)">puntos verificados</div>
+      <div class="chk-bar"><div class="chk-fill" id="chk-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <ul style="list-style:none">
+    <li class="check-item" onclick="toggleCheck(this)">
+      <input type="checkbox">
+      <div class="check-body">Todos los resultados tienen el <strong>mismo formato numérico que la meta</strong> (% vs %, decimal vs decimal). Sin texto mezclado ni rangos con guión.
+        <span class="check-area">01_KPIs_Por_Persona → columna Resultado</span></div>
+    </li>
+    <li class="check-item" onclick="toggleCheck(this)">
+      <input type="checkbox">
+      <div class="check-body">Los <strong>KPIs decrecientes</strong> tienen la escala correctamente invertida: Cero = valor más alto, Sobresaliente = valor más bajo.
+        <span class="check-area">Archivo de Definición de KPIs → columna Rangos</span></div>
+    </li>
+    <li class="check-item" onclick="toggleCheck(this)">
+      <input type="checkbox">
+      <div class="check-body">Los rangos de cumplimiento no tienen <strong>traslapes ni rangos imposibles</strong>. Ningún valor cae en dos categorías al mismo tiempo.
+        <span class="check-area">Archivo de Definición de KPIs → columnas Cero/Deficiente/Esperado/Sobresaliente</span></div>
+    </li>
+    <li class="check-item" onclick="toggleCheck(this)">
+      <input type="checkbox">
+      <div class="check-body">Todas las <strong>variables N y X</strong> fueron sustituidas por el valor numérico real del mes.
+        <span class="check-area">01_KPIs_Por_Persona → columna Meta</span></div>
+    </li>
+    <li class="check-item" onclick="toggleCheck(this)">
+      <input type="checkbox">
+      <div class="check-body">Todos los <strong>socios 10x</strong> están reportados correctamente con su ID y nombre exacto. Ninguno aparece en blanco ni con los indicadores de equipo operativo.
+        <span class="check-area">Base de Definición de KPIs → registro de socios 10x</span></div>
+    </li>
+    <li class="check-item" onclick="toggleCheck(this)">
+      <input type="checkbox">
+      <div class="check-body">Los KPIs que <strong>no aplican</strong> en el mes tienen las celdas de Meta y Resultado vacías, y el motivo explicado en la columna de evidencia.
+        <span class="check-area">01_KPIs_Por_Persona → columna Link de evidencia</span></div>
+    </li>
+    <li class="check-item" onclick="toggleCheck(this)">
+      <input type="checkbox">
+      <div class="check-body">Si existe algún <strong>acuerdo de bono extraordinario</strong>, el motivo está registrado en Comentarios. Los resultados en KPIs_Por_Persona no se modificaron.
+        <span class="check-area">02_Bonos → columna Comentarios</span></div>
+    </li>
+    <li class="check-item" onclick="toggleCheck(this)">
+      <input type="checkbox">
+      <div class="check-body">Cualquier <strong>ajuste de indicadores</strong> del trimestre fue actualizado en el archivo de Definición de KPIs con justificación y VoBo DG — no directamente en el cierre.
+        <span class="check-area">Archivo de Definición de KPIs → columna Justificación</span></div>
+    </li>
+  </ul>
+</div>
+
+<footer>Podemos Progresar — Dirección de Personas / Desarrollo Organizacional · Versión JUN 2026 · Uso interno</footer>
+</main>
+</div>
+
+<script>
+// Progress bar
+window.addEventListener('scroll',()=>{
+  const d=document.documentElement;
+  document.getElementById('progress-bar').style.width=(d.scrollTop/(d.scrollHeight-d.clientHeight)*100)+'%';
+  updateNav();
+});
+
+// Active nav
+const sectionIds=['hero','contexto','kpi-intro','kpi-categorias','kpi-creciente','kpi-formato','kpi-rangos','kpi-nx','ajuste','cierre-intro','cierre-cat','cierre-formato','cierre-10x','excepciones','checklist'];
+function updateNav(){
+  let current='';
+  sectionIds.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.getBoundingClientRect().top<110)current=id;
+  });
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  if(current){
+    document.querySelectorAll('.nav-link').forEach(l=>{
+      if(l.getAttribute('onclick')&&l.getAttribute('onclick').includes("'"+current+"'"))l.classList.add('active');
+    });
+  }
+}
+
+// Scroll navigation — fixed name to avoid conflict with window.scrollTo
+function scrollToSection(id){
+  const el=document.getElementById(id);
+  if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// KPI type toggle
+function showKpiType(type){
+  document.getElementById('panel-creciente').style.display=type==='creciente'?'block':'none';
+  document.getElementById('panel-decreciente').style.display=type==='decreciente'?'block':'none';
+  document.querySelectorAll('#kpi-type-toggle .toggle-btn').forEach((b,i)=>{
+    b.classList.toggle('active',(i===0&&type==='creciente')||(i===1&&type==='decreciente'));
+  });
+}
+
+// Carousel
+let currentSlide=0;
+const totalSlides=3;
+function updateCarousel(){
+  document.getElementById('carousel-slides').style.transform=`translateX(-${currentSlide*100}%)`;
+  document.querySelectorAll('.carousel-dot').forEach((d,i)=>d.classList.toggle('active',i===currentSlide));
+}
+function moveCarousel(dir){
+  currentSlide=(currentSlide+dir+totalSlides)%totalSlides;
+  updateCarousel();
+}
+function goToSlide(n){currentSlide=n;updateCarousel();}
+
+// Checklist
+function toggleCheck(item){
+  const cb=item.querySelector('input[type=checkbox]');
+  cb.checked=!cb.checked;
+  item.classList.toggle('checked',cb.checked);
+  const checked=document.querySelectorAll('.check-item.checked').length;
+  const total=document.querySelectorAll('.check-item').length;
+  document.getElementById('chk-count').textContent=checked+'/'+total;
+  document.getElementById('chk-fill').style.width=(checked/total*100)+'%';
+}
+</script>
+</body>
+</html>
